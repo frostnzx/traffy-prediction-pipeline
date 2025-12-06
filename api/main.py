@@ -39,7 +39,6 @@ async def load_model():
     """Load the trained model when API starts."""
     global model
     try:
-        # By this point, wait_for_model.sh should have ensured model exists
         if not MODEL_PATH.exists():
             logger.error(f"Model not found at {MODEL_PATH} - this should not happen if wait script worked")
             return

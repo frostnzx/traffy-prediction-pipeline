@@ -13,7 +13,7 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
-BASE_DIR = Path(__file__).resolve().parents[3]
+BASE_DIR = Path("/opt/airflow")
 DATA_DIR = BASE_DIR / "data"
 RAW_PATH = DATA_DIR / "bangkok_traffy.csv"
 CLEAN_PATH = DATA_DIR / "bangkok_traffy_clean.csv"
