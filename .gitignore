@@ -37,16 +37,29 @@ airflow/*.pid
 airflow/*.log
 airflow/*.err
 airflow/webserver_config.py
+airflow/__pycache__/
+airflow/dags/__pycache__/
+airflow/dags/pipeline_tasks/__pycache__/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+*.docker
 
 # Data files
 data/*.csv
 data/**/*.csv
+data/external/
+data/features/
+data/predictions/
 !data/.gitkeep
 
 # Models
 models/*.joblib
 models/*.pkl
 models/*.h5
+models/*.pt
+models/*.pth
 !models/.gitkeep
 
 # Jupyter Notebook
