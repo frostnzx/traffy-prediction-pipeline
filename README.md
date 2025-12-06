@@ -20,8 +20,6 @@
 -   [Usage](#usage)
 -   [API Documentation](#api-documentation)
 -   [Pipeline Details](#pipeline-details)
--   [Contributing](#contributing)
--   [License](#license)
 
 ---
 
