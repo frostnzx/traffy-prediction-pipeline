@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir \
 COPY app.py .
 COPY models/ ./models/
 COPY data/ ./data/
-COPY scripts/wait_for_model.sh /app/
+COPY scripts/wait_for_model.sh /app/wait_for_model.sh
 
 # Make script executable
 RUN chmod +x /app/wait_for_model.sh
