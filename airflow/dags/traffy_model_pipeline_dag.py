@@ -2,9 +2,8 @@ from datetime import datetime
 from pathlib import Path
 
 from airflow import DAG
-from airflow.operators.python import BranchPythonOperator
+from airflow.operators.python import BranchPythonOperator, PythonOperator
 from airflow.operators.empty import EmptyOperator
-from airflow.providers.standard.operators.python import PythonOperator
 
 from pipeline_tasks.external_scraping import run as external_scraping_run
 from pipeline_tasks.feature_engineering import run as feature_engineering_run

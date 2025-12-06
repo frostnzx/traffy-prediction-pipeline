@@ -37,6 +37,7 @@ airflow/*.pid
 airflow/*.log
 airflow/*.err
 airflow/webserver_config.py
+airflow/airflow.cfg
 airflow/__pycache__/
 airflow/dags/__pycache__/
 airflow/dags/pipeline_tasks/__pycache__/
