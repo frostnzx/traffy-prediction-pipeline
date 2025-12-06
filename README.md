@@ -180,7 +180,6 @@ traffy-prediction-pipeline/
 
 ---
 
-
 #### 1. Clone the repository
 
 ```bash
@@ -198,9 +197,9 @@ pip install gdown
 python scripts/download_data.py
 ```
 
->  **Important:** Update `GOOGLE_DRIVE_FILE_ID` in `scripts/download_data.py` with your Google Drive file ID, or manually place `bangkok_traffy.csv` in the `data/` folder.
+> **Important:** Update `GOOGLE_DRIVE_FILE_ID` in `scripts/download_data.py` with your Google Drive file ID, or manually place `bangkok_traffy.csv` in the `data/` folder.
 
-#### 3. Start all services 
+#### 3. Start all services
 
 ```bash
 docker-compose up -d
@@ -211,9 +210,9 @@ docker-compose up -d
 1. PostgreSQL starts (Airflow metadata DB)
 2. Airflow webserver & scheduler start
 3. **Training pipeline auto-triggers** (runs once on first startup)
-4. Data preparation → External scraping → Feature engineering → Model training
-5. API & Streamlit wait for model to be ready
-6. Once model exists (~10-15 minutes), services start automatically
+4. Data preparation → External scraping → Feature engineering → Model training (~10-15 minutes)
+5. API & Streamlit start immediately (will show errors until model is ready)
+6. Once model is trained, refresh the UI to use predictions
 
 #### 4. Monitor training progress (optional)
 
@@ -232,10 +231,6 @@ open http://localhost:8080  # Login: admin/admin
 -   **Streamlit UI:** http://localhost:8501
 
 **Note:** The DAG runs automatically once on first startup. For retraining, manually trigger it in the Airflow UI
-
-
-
-
 
 ---
 
@@ -279,7 +274,6 @@ curl -X POST "http://localhost:8000/predict" \
     "is_late": 0
 }
 ```
-
 
 ---
 
