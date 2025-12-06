@@ -39,15 +39,16 @@ async def load_model():
     """Load the trained model when API starts."""
     global model
     try:
+        # By this point, wait_for_model.sh should have ensured model exists
         if not MODEL_PATH.exists():
-            logger.error(f"Model not found at {MODEL_PATH}")
-            raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
-        
+            logger.error(f"Model not found at {MODEL_PATH} - this should not happen if wait script worked")
+            return
+            
         model = joblib.load(MODEL_PATH)
-        logger.info(f"✅ Model loaded successfully from {MODEL_PATH}")
+        logger.info(f"Model loaded successfully from {MODEL_PATH}")
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
-        raise
+        logger.warning("API starting without model - predictions will fail")
 
 
 class TicketFeatures(BaseModel):
@@ -122,12 +123,12 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    if model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+    model_loaded = model is not None
     return {
-        "status": "healthy",
-        "model_loaded": True,
-        "model_path": str(MODEL_PATH)
+        "status": "healthy" if model_loaded else "degraded",
+        "model_loaded": model_loaded,
+        "model_path": str(MODEL_PATH),
+        "message": "Ready for predictions" if model_loaded else "Waiting for model to be trained"
     }
 
 
@@ -142,7 +143,10 @@ async def predict(ticket: TicketFeatures):
         - is_late: 1 if late, 0 if on-time
     """
     if model is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
+        raise HTTPException(
+            status_code=503,
+            detail="Model not available. Please train the model first by triggering the Airflow DAG at http://localhost:8080"
+        )
     
     try:
         # Convert to DataFrame
