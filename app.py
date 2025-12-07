@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import pydeck as pdk
 from pathlib import Path
 
 # Paths
@@ -177,6 +178,139 @@ if PREDICTIONS_PATH.exists():
     with col3:
         avg_prob = df_pred["pred_proba_late"].mean()
         st.metric("Avg Late Probability", f"{avg_prob:.1%}")
+    
+    # Geospatial Analysis with PyDeck
+    st.subheader("Geospatial Analysis: Late Tickets Map")
+    
+    # Filter data with valid coordinates and swap lat/lon (data has them reversed)
+    df_map = df_pred[(df_pred["lat"].notna()) & (df_pred["lon"].notna())].copy()
+    df_map["latitude"] = df_map["lon"]  # Swap: lon column contains lat values
+    df_map["longitude"] = df_map["lat"]  # Swap: lat column contains lon values
+    
+    if len(df_map) > 0:
+        # Create tabs for different visualizations
+        tab1, tab2, tab3 = st.tabs(["Heatmap", "Hexagon Layer", "Scatterplot"])
+        
+        with tab1:
+            st.markdown("**Heat intensity shows concentration of late tickets**")
+            
+            # Prepare data for heatmap
+            df_late_heat = df_map[df_map["pred_is_late"] == 1][["longitude", "latitude", "pred_proba_late"]].copy()
+            
+            if len(df_late_heat) > 0:
+                heatmap_layer = pdk.Layer(
+                    "HeatmapLayer",
+                    data=df_late_heat.to_dict('records'),
+                    get_position=['longitude', 'latitude'],
+                    get_weight='pred_proba_late',
+                    radius_pixels=60,
+                )
+                
+                view_state = pdk.ViewState(
+                    latitude=13.75,
+                    longitude=100.52,
+                    zoom=10,
+                    pitch=0,
+                )
+                
+                st.pydeck_chart(pdk.Deck(
+                    layers=[heatmap_layer],
+                    initial_view_state=view_state,
+                ))
+            else:
+                st.info("No late tickets to display on heatmap")
+        
+        with tab2:
+            st.markdown("**Hexagon height and color show late ticket density**")
+            
+            # Prepare data for hexagon layer
+            df_hex = df_map[["longitude", "latitude", "pred_is_late"]].copy()
+            
+            hexagon_layer = pdk.Layer(
+                "HexagonLayer",
+                data=df_hex.to_dict('records'),
+                get_position=['longitude', 'latitude'],
+                radius=200,
+                elevation_scale=50,
+                elevation_range=[0, 500],
+                extruded=True,
+                pickable=True,
+                auto_highlight=True,
+            )
+            
+            view_state = pdk.ViewState(
+                latitude=13.75,
+                longitude=100.52,
+                zoom=10,
+                pitch=45,
+                bearing=0,
+            )
+            
+            st.pydeck_chart(pdk.Deck(
+                layers=[hexagon_layer],
+                initial_view_state=view_state,
+            ))
+        
+        with tab3:
+            st.markdown("**Red = Late tickets, Green = On-time tickets**")
+            
+            # Prepare data for scatterplot
+            df_scatter = df_map[["longitude", "latitude", "pred_is_late", "pred_proba_late", "district", "type"]].copy()
+            
+            # Add color based on prediction
+            df_scatter["color"] = df_scatter.apply(
+                lambda row: [255, int(100 * (1 - row["pred_proba_late"])), 0, 200] if row["pred_is_late"] == 1 
+                else [0, 200, 100, 150],
+                axis=1
+            )
+            
+            # Add radius based on probability
+            df_scatter["radius"] = df_scatter.apply(
+                lambda row: 80 if row["pred_is_late"] == 1 else 40,
+                axis=1
+            )
+            
+            scatter_layer = pdk.Layer(
+                "ScatterplotLayer",
+                data=df_scatter.to_dict('records'),
+                get_position=['longitude', 'latitude'],
+                get_color='color',
+                get_radius='radius',
+                pickable=True,
+                auto_highlight=True,
+            )
+            
+            view_state = pdk.ViewState(
+                latitude=13.75,
+                longitude=100.52,
+                zoom=10,
+                pitch=0,
+            )
+            
+            st.pydeck_chart(pdk.Deck(
+                layers=[scatter_layer],
+                initial_view_state=view_state,
+                tooltip={
+                    "html": "<b>District:</b> {district}<br/><b>Type:</b> {type}<br/><b>Late:</b> {pred_is_late}<br/><b>Probability:</b> {pred_proba_late}",
+                    "style": {"backgroundColor": "steelblue", "color": "white"}
+                },
+            ))
+        
+        # District-level statistics
+        st.subheader("District Statistics")
+        district_stats = df_map.groupby("district").agg({
+            "pred_is_late": ["sum", "count", "mean"]
+        }).round(3)
+        district_stats.columns = ["Late Count", "Total Tickets", "Late Rate"]
+        district_stats = district_stats.sort_values("Late Rate", ascending=False)
+        
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.dataframe(district_stats.head(10), use_container_width=True)
+        with col2:
+            st.bar_chart(district_stats["Late Rate"].head(15))
+    else:
+        st.warning("No geospatial data available in predictions.")
     
     # Show sample predictions
     st.subheader("Sample Predictions")
